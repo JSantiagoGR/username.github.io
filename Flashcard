@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Flashcard AI Studio</title>
+    <!-- Iconos de Lucide para un diseño limpio -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #f6f8fa;
+            --card-bg: #ffffff;
+            --text-main: #1f2328;
+            --text-muted: #657180;
+            --accent: #007aff; /* Azul estilo iOS */
+            --border: #e1e4e8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Header de la App */
+        header {
+            background: var(--card-bg);
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        header h1 {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* Contenedor Principal (Scrollable) */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            padding-bottom: 100px; /* Espacio para el formulario fijo inferior */
+        }
+
+        /* Selector de Categorías en la parte superior */
+        .category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            scrollbar-width: none;
+        }
+        .category-tabs::-webkit-scrollbar { display: none; }
+
+        .tab {
+            background: var(--card-bg);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* Grid de Flashcards */
+        .flashcards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        /* Tarjeta con efecto 3D Flip */
+        .flashcard-wrapper {
+            perspective: 1000px;
+            height: 180px;
+            cursor: pointer;
+        }
+
+        .flashcard {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .flashcard.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+            background: #fafafa;
+        }
+
+        .card-tag {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: auto;
+        }
+
+        .card-body {
+            font-size: 15px;
+            line-height: 1.4;
+            color: var(--text-main);
+            overflow-y: auto;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #ff3b30;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        /* Formulario Inferior Fijo */
+        .creation-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); /* Soporte para el notch inferior de iPhone */
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+        }
+
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        input, select {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            color: var(--text-main);
+        }
+
+        input { flex: 1; }
+        select { width: 110px; }
+
+        .submit-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 60px;
+        }
+        .empty-state i { margin-bottom: 12px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Mis Flashcards</h1>
+        <button onclick="addCategory()" style="background:none; border:none; color:var(--accent); font-weight:600; font-size:15px;">+ Nueva Lista</button>
+    </header>
+
+    <main>
+        <!-- Pestañas de categorías -->
+        <div class="category-tabs" id="categoryTabs">
+            <!-- Se inyectan dinámicamente -->
+        </div>
+
+        <!-- Rejilla de tarjetas -->
+        <div class="flashcards-grid" id="flashcardsGrid">
+            <!-- Se inyectan dinámicamente -->
+        </div>
+    </main>
+
+    <!-- Panel de creación rápida -->
+    <div class="creation-panel">
+        <div class="input-row">
+            <input type="text" id="wordInput" placeholder="Introduce una palabra (ej. Mamífero)..." autocomplete="off">
+            <select id="categorySelect">
+                <!-- Opciones dinámicas -->
+            </select>
+        </div>
+        <button class="submit-btn" id="generateBtn" onclick="generateFlashcard()">
+            <i data-lucide="sparkles" size="18"></i> Generar con IA
+        </button>
+    </div>
+
+    <script>
+        // Base de datos simulada en LocalStorage para no perder tus tarjetas al cerrar la app
+        let state = JSON.parse(localStorage.getItem('flashcards_app_state')) || {
+            categories: ['Todos', 'Medicina', 'Alemán'],
+            activeCategory: 'Todos',
+            flashcards: [
+                { id: 1, word: 'Mamífero', definition: 'Animal vertebrado de sangre caliente que se caracteriza por tener glándulas mamarias productoras de leche para alimentar a sus crías.', category: 'Medicina' },
+                { id: 2, word: 'Das Auto', definition: 'Significa "El automóvil" en alemán. Sustantivo neutro cuyo plural es "Die Autos".', category: 'Alemán' }
+            ]
+        };
+
+        // Simulación de respuesta de IA (Explicación útil e inmediata)
+        // Nota: En producción, aquí harías un fetch() a una API de OpenAI, Claude, etc.
+        const mockAIService = (word, category) => {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    let definition = `Definición optimizada para ${category}: Contenido explicativo detallado sobre el término "${word}". Incluye conceptos clave y notas de repaso esenciales de manera sintetizada para memorización rápida.`;
+                    
+                    // Respuestas divertidas personalizadas por si pruebas ejemplos comunes
+                    if(word.toLowerCase() === 'mamífero') {
+                        definition = "Animal vertebrado de sangre caliente que posee glándulas mamarias productoras de leche para alimentar a sus crías y el cuerpo cubierto de pelo.";
+                    } else if (word.toLowerCase() === 'mitocondria') {
+                        definition = "Organelo celular encargado de generar la mayor parte de la energía química (ATP) necesaria para activar las reacciones bioquímicas de la célula.";
+                    } else if (word.toLowerCase() === 'zeit') {
+                        definition = "Significa 'Tiempo' en alemán. Sustantivo femenino (Die Zeit). Plural: Zeiten.";
+                    }
+                    resolve(definition);
+                }, 1000); // Simula el retraso de pensar de la IA
+            });
+        };
+
+        function saveState() {
+            localStorage.setItem('flashcards_app_state', JSON.stringify(state));
+        }
+
+        function renderCategories() {
+            const tabsContainer = document.getElementById('categoryTabs');
+            const selectContainer = document.getElementById('categorySelect');
+            
+            // Render Tabs
+            tabsContainer.innerHTML = state.categories.map(cat => `
+                <div class="tab ${state.activeCategory === cat ? 'active' : ''}" onclick="setCategory('${cat}')">
+                    ${cat}
+                </div>
+            `).join('');
+
+            // Render Select Options (Excluyendo 'Todos')
+            selectContainer.innerHTML = state.categories.filter(cat => cat !== 'Todos').map(cat => `
+                <option value="${cat}">${cat}</option>
+            `).join('');
+        }
+
+        function setCategory(cat) {
+            state.activeCategory = cat;
+            renderFlashcards();
+            renderCategories();
+        }
+
+        function addCategory() {
+            const name = prompt("Nombre de la nueva categoría / lista de estudio:");
+            if (name && !state.categories.includes(name)) {
+                state.categories.push(name);
+                saveState();
+                renderCategories();
+            }
+        }
+
+        function renderFlashcards() {
+            const grid = document.getElementById('flashcardsGrid');
+            const filtered = state.flashcards.filter(card => 
+                state.activeCategory === 'Todos' || card.category === state.activeCategory
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="layers" size="48"></i>
+                        <p>No hay tarjetas en esta categoría.<br>¡Crea la primera abajo!</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            grid.innerHTML = filtered.map(card => `
+                <div class="flashcard-wrapper" onclick="flipCard(this)">
+                    <div class="flashcard">
+                        <!-- Cara Frontal -->
+                        <div class="card-front">
+                            <button class="delete-btn" onclick="deleteCard(event, ${card.id})">
+                                <i data-lucide="trash-2" size="18"></i>
+                            </button>
+                            <span class="card-tag">${card.category}</span>
+                            <h2 class="card-title">${card.word}</h2>
+                            <span style="font-size:12px; color:var(--text-muted); text-align:right;">Tap para ver definición →</span>
+                        </div>
+                        <!-- Cara Trasera -->
+                        <div class="card-back">
+                            <span class="card-tag" style="color:var(--text-muted)">Explicación útil</span>
+                            <div class="card-body">${card.definition}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            lucide.createIcons();
+        }
+
+        function flipCard(wrapper) {
+            const card = wrapper.querySelector('.flashcard');
+            card.classList.toggle('flipped');
+        }
+
+        function deleteCard(event, id) {
+            event.stopPropagation(); // Evita que la tarjeta gire al darle a borrar
+            if(confirm("¿Seguro que quieres eliminar esta tarjeta?")) {
+                state.flashcards = state.flashcards.filter(c => c.id !== id);
+                saveState();
+                renderFlashcards();
+            }
+        }
+
+        async function generateFlashcard() {
+            const wordInput = document.getElementById('wordInput');
+            const categorySelect = document.getElementById('categorySelect');
+            const generateBtn = document.getElementById('generateBtn');
+            
+            const word = wordInput.value.trim();
+            const category = categorySelect.value;
+
+            if (!word) return;
+
+            // Bloquear botón mientras la "IA" responde
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = `<i data-lucide="loader" class="animate-spin" size="18"></i> Procesando con IA...`;
+            lucide.createIcons();
+
+            const definition = await mockAIService(word, category);
+
+            // Guardar nueva tarjeta
+            state.flashcards.unshift({
+                id: Date.now(),
+                word,
+                definition,
+                category
+            });
+
+            saveState();
+            wordInput.value = '';
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = `<i data-lucide="sparkles" size="18"></i> Generar con IA`;
+            
+            renderFlashcards();
+        }
+
+        // Inicializar la App al cargar la página
+        renderCategories();
+        renderFlashcards();
+    </script>
+</body>
+</html>

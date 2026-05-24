@@ -274,7 +274,6 @@
             }
         }
 
-        // FUNCIÓN DE LLAMADA CORREGIDA PARA CONFIGURACIÓN DIRECTA WEB
         async function askGeminiAI(word, category) {
             if (!apiKey) {
                 alert("Por favor, haz clic en 'Configurar Clave API Gemini' para ingresar tu clave.");
@@ -301,8 +300,8 @@ Para cualquier otra categoría:
 
 Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`;
 
-            // URL del endpoint estable para llamadas directas
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+            // URL Actualizada a la versión funcional de Gemini 1.5 Flash
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
@@ -466,3 +465,4 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`
     </script>
 </body>
 </html>
+

@@ -1,10 +1,11 @@
 # username.github.io
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Flashcard AI Studio Pro</title>
+    <title>Flashcard AI Studio Universal</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -45,16 +46,13 @@
             z-index: 10;
         }
 
-        header h1 {
-            font-size: 20px;
-            font-weight: 700;
-        }
+        header h1 { font-size: 20px; font-weight: 700; }
 
         main {
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            padding-bottom: 120px; 
+            padding-bottom: 140px; 
         }
 
         .category-tabs {
@@ -104,9 +102,7 @@
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .flashcard.flipped {
-            transform: rotateY(180deg);
-        }
+        .flashcard.flipped { transform: rotateY(180deg); }
 
         .card-front, .card-back {
             position: absolute;
@@ -125,7 +121,6 @@
         .card-back {
             transform: rotateY(180deg);
             background: #fafafa;
-            position: relative;
         }
 
         .card-header-area {
@@ -156,7 +151,7 @@
             line-height: 1.5;
             color: var(--text-main);
             overflow-y: auto;
-            white-space: pre-line; /* Mantiene los saltos de línea para un orden limpio */
+            white-space: pre-line;
         }
 
         .delete-btn {
@@ -167,6 +162,7 @@
             padding: 2px;
         }
 
+        /* Panel de control inferior */
         .creation-panel {
             position: fixed;
             bottom: 0;
@@ -216,6 +212,17 @@
 
         .submit-btn:disabled { opacity: 0.6; }
 
+        .api-setup-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-decoration: underline;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 2px;
+        }
+
         .empty-state {
             text-align: center;
             color: var(--text-muted);
@@ -237,89 +244,87 @@
 
     <div class="creation-panel">
         <div class="input-row">
-            <input type="text" id="wordInput" placeholder="Introduce un concepto o palabra..." autocomplete="off">
+            <input type="text" id="wordInput" placeholder="Escribe cualquier palabra..." autocomplete="off">
             <select id="categorySelect"></select>
         </div>
         <button class="submit-btn" id="generateBtn" onclick="generateFlashcard()">
-            <i data-lucide="sparkles" size="18"></i> Generar con IA Especializada
+            <i data-lucide="sparkles" size="18"></i> Consultar Inteligencia Artificial
         </button>
+        <button class="api-setup-btn" onclick="setupApiKey()">Configurar Clave API Gemini</button>
     </div>
 
     <script>
-        // Inicialización de datos locales
-        let state = JSON.parse(localStorage.getItem('flashcards_intelligent_state')) || {
-            categories: ['Todos', 'Medicina', 'Alemán', 'Granja'],
+        // Carga el estado guardado del celular
+        let state = JSON.parse(localStorage.getItem('flashcards_universal_state')) || {
+            categories: ['Todos', 'Medicina', 'Alemán'],
             activeCategory: 'Todos',
-            flashcards: [
-                { id: 1, word: 'Músculo', definition: '• Qué es: Tejido blando y contráctil del cuerpo formado por fibras musculares.\n• Cantidad: El cuerpo humano tiene aproximadamente 650 músculos esqueléticos.\n• Función: Permite el movimiento, mantiene la postura y estabiliza las articulaciones.', category: 'Medicina' },
-                { id: 2, word: 'Perro', definition: '• Traducción: der Hund\n• Artículo: DER (Masculino)\n• Plural: die Hunde\n• Frase útil: "Der Hund bellt im Garten" (El perro ladra en el jardín).', category: 'Alemán' }
-            ]
+            flashcards: []
         };
 
-        // El motor cognitivo de la APP (Simula prompts especializados de IA)
-        const generateIntelligentDefinition = (word, category) => {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const cleanWord = word.trim().toLowerCase();
-                    let response = "";
-
-                    // Diccionario Dinámico de Inteligencia por categoría
-                    if (category.toLowerCase() === 'alemán') {
-                        // Base de datos inteligente para Alemán
-                        const baseAleman = {
-                            'perro': { art: 'DER', trad: 'Hund', plu: 'Hunde', ex: 'Der Hund ist treu. (El perro es fiel).' },
-                            'gato': { art: 'DIE', trad: 'Katze', plu: 'Katzen', ex: 'Die Katze schläft. (El gato duerme).' },
-                            'auto': { art: 'DAS', trad: 'Auto', plu: 'Autos', ex: 'Das Auto es schnell. (El coche es rápido).' },
-                            'casa': { art: 'DIE', trad: 'Haus', plu: 'Häuser', ex: 'Ich bleibe zu Hause. (Me quedo en casa).' }
-                        };
-
-                        if (baseAleman[cleanWord]) {
-                            const d = baseAleman[cleanWord];
-                            response = `• Traducción: der/die/das ${d.trad}\n• Artículo: ${d.art}\n• Plural: die ${d.plu}\n• Ejemplo: "${d.ex}"`;
-                        } else {
-                            // Respuesta genérica inteligente si la palabra no está mapeada
-                            response = `• Traducción aproximada: [${word.toUpperCase()}]\n• Artículo sugerido: Analizar si es masculino (der), femenino (die) o neutro (das).\n• Tip de estudio: Busca si termina en -ung, -heit, -keit (siempre son DIE).`;
-                        }
-
-                    } else if (category.toLowerCase() === 'medicina') {
-                        // Base de datos inteligente para Medicina
-                        const baseMedicina = {
-                            'músculo': { def: 'Tejido compuesto por fibras contráctiles que generan movimiento.', cant: 'Aprox. 650 músculos esqueléticos en el cuerpo humano.', extra: 'Se dividen en tres tipos: esquelético, cardíaco y liso.' },
-                            'hueso': { def: 'Órgano firme, duro y resistente que forma el endoesqueleto de los vertebrados.', cant: 'El cuerpo humano adulto tiene exactamente 206 huesos.', extra: 'El hueso más largo es el fémur y el más pequeño es el estribo.' },
-                            'corazón': { def: 'Órgano muscular hueco que bombea sangre a todo el cuerpo.', cant: '1 órgano principal, dividido en 4 cavidades (2 aurículas, 2 ventrículos).', extra: 'Late unas 100,000 veces al día en promedio.' }
-                        };
-
-                        if (baseMedicina[cleanWord]) {
-                            const m = baseMedicina[cleanWord];
-                            response = `• Qué es: ${m.def}\n• Cantidad/Datos: ${m.cant}\n• Detalles clave: ${m.extra}`;
-                        } else {
-                            response = `• Definición Médica: Término clínico relacionado con "${word}".\n• Anatomía/Fisiología: Evaluar localización sistémica y función celular.\n• Nota clínica: Investigar patologías comunes asociadas a este concepto.`;
-                        }
-
-                    } else if (category.toLowerCase() === 'granja') {
-                        const baseGranja = {
-                            'gato': { def: 'Felino doméstico usado habitualmente para el control de plagas de roedores en graneros.', rol: 'Control biológico / Mascota.', dato: 'Tienen un excelente oído y visión nocturna ideales para la caza.' },
-                            'vaca': { def: 'Mamífero rumiante grande criado para la producción de leche y carne.', rol: 'Ganadería principal.', dato: 'Una vaca promedio produce alrededor de 25-30 litros de leche al día.' }
-                        };
-
-                        if (baseGranja[cleanWord]) {
-                            const g = baseGranja[cleanWord];
-                            response = `• Animal: ${word}\n• Rol en la Granja: ${g.rol}\n• Qué es: ${g.def}\n• Dato curioso: ${g.dato}`;
-                        } else {
-                            response = `• Categoría Granja: Información sobre "${word}".\n• Relación rural: Especie, crianza o herramienta útil para el sector agrícola.`;
-                        }
-                    } else {
-                        // Cualquier otra lista personalizada que cree el usuario
-                        response = `• Concepto: ${word}\n• Categoría: ${category}\n• Breve explicación: Información sintética útil diseñada automáticamente para el repaso de ${category}.`;
-                    }
-
-                    resolve(response);
-                }, 800);
-            });
-        };
+        // Guarda o actualiza tu clave secreta de Google Gemini
+        let apiKey = localStorage.getItem('gemini_flashcard_key') || '';
 
         function saveState() {
-            localStorage.setItem('flashcards_intelligent_state', JSON.stringify(state));
+            localStorage.setItem('flashcards_universal_state', JSON.stringify(state));
+        }
+
+        function setupApiKey() {
+            const key = prompt("Pega aquí tu API Key de Google Gemini (Gratuita):", apiKey);
+            if (key !== null) {
+                apiKey = key.trim();
+                localStorage.setItem('gemini_flashcard_key', apiKey);
+                alert("Clave guardada con éxito. ¡Ya puedes consultar cualquier palabra!");
+            }
+        }
+
+        // LLAMADA REAL A LA INTELIGENCIA ARTIFICIAL EN VIVO
+        async function askGeminiAI(word, category) {
+            if (!apiKey) {
+                alert("Por favor, haz clic primero en 'Configurar Clave API Gemini' abajo para activar las consultas infinitas.");
+                return null;
+            }
+
+            // Aquí le ordenamos a la IA exactamente cómo estructurar la respuesta según tu categoría
+            const promptTexto = `Eres un asistente de estudio experto. El usuario quiere aprender el término "${word}" dentro de la categoría "${category}".
+Genera una respuesta EXCLUSIVAMENTE usando viñetas planas (utiliza el carácter "•") siguiendo estrictamente estas reglas de contexto:
+
+Si la categoría es "Alemán" (o relacionada con idiomas):
+• Traducción: [Traducción exacta al idioma]
+• Artículo: [Der, Die o Das si aplica, en mayúsculas]
+• Plural: [Forma plural]
+• Frase útil: [Un ejemplo práctico corto en ese idioma y su traducción]
+
+Si la categoría es "Medicina" (o relacionada con ciencias):
+• Qué es: [Definición clínica/médica simplificada]
+• Detalles anatómicos/Cantidad: [Datos anatómicos numéricos relevantes, ubicación o conteo si aplica]
+• Función principal: [Para qué sirve en el organismo]
+
+Para cualquier otra categoría:
+• Concepto central: [Explicación adaptada al tema de la lista]
+• Información útil: [Dato clave para memorizar de manera efectiva]
+
+Sé muy conciso, directo al grano y no agregues textos de introducción ni despedidas. Solo las viñetas directas.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: promptTexto }] }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text.trim();
+                } else {
+                    throw new Error("Respuesta de IA vacía");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al conectar con la IA. Revisa que tu clave API sea correcta y tengas conexión a internet.");
+                return null;
+            }
         }
 
         function renderCategories() {
@@ -344,7 +349,7 @@
         }
 
         function addCategory() {
-            const name = prompt("Nombre de la nueva lista de estudio:");
+            const name = prompt("Nombre de la nueva lista de estudio (ej. Historia, Inglés, Leyes):");
             if (name && !state.categories.includes(name)) {
                 state.categories.push(name);
                 saveState();
@@ -361,8 +366,8 @@
             if (filtered.length === 0) {
                 grid.innerHTML = `
                     <div class="empty-state">
-                        <i data-lucide="layers" size="40"></i>
-                        <p style="margin-top:10px;">Lista vacía.<br>Escribe una palabra abajo para crear una tarjeta inteligente.</p>
+                        <i data-lucide="sparkles" size="40"></i>
+                        <p style="margin-top:10px;">No hay tarjetas aquí.<br>Escribe cualquier palabra abajo para que la IA la procese.</p>
                     </div>
                 `;
                 lucide.createIcons();
@@ -380,11 +385,11 @@
                                 </button>
                             </div>
                             <h2 class="card-title">${card.word}</h2>
-                            <span style="font-size:11px; color:var(--text-muted); text-align:right; width:100%;">Tocar para revelar info →</span>
+                            <span style="font-size:11px; color:var(--text-muted); text-align:right; width:100%;">Tocar para ver información de la IA →</span>
                         </div>
                         <div class="card-back">
                             <div class="card-header-area">
-                                <span class="card-tag" style="color:var(--text-muted)">Información Clave</span>
+                                <span class="card-tag" style="color:var(--text-muted)">Análisis de la IA</span>
                             </div>
                             <div class="card-body">${card.definition}</div>
                         </div>
@@ -418,25 +423,31 @@
             const category = categorySelect.value;
 
             if (!word) return;
+            if (!apiKey) {
+                setupApiKey();
+                return;
+            }
 
             generateBtn.disabled = true;
-            generateBtn.innerHTML = `<i data-lucide="loader" class="animate-spin" size="18"></i> Estructurando datos...`;
+            generateBtn.innerHTML = `<i data-lucide="loader" class="animate-spin" size="18"></i> Pensando en tiempo real...`;
             lucide.createIcons();
 
-            // Aquí se ejecuta el filtro por categoría
-            const intelligentDefinition = await generateIntelligentDefinition(word, category);
+            // Aquí se conecta con el servidor vivo de Google
+            const aiDefinition = await askGeminiAI(word, category);
 
-            state.flashcards.unshift({
-                id: Date.now(),
-                word,
-                definition: intelligentDefinition,
-                category
-            });
+            if (aiDefinition) {
+                state.flashcards.unshift({
+                    id: Date.now(),
+                    word,
+                    definition: aiDefinition,
+                    category
+                });
+                saveState();
+                wordInput.value = '';
+            }
 
-            saveState();
-            wordInput.value = '';
             generateBtn.disabled = false;
-            generateBtn.innerHTML = `<i data-lucide="sparkles" size="18"></i> Generar con IA Especializada`;
+            generateBtn.innerHTML = `<i data-lucide="sparkles" size="18"></i> Consultar Inteligencia Artificial`;
             
             renderFlashcards();
         }

@@ -162,7 +162,6 @@
             padding: 2px;
         }
 
-        /* Panel de control inferior */
         .creation-panel {
             position: fixed;
             bottom: 0;
@@ -254,14 +253,12 @@
     </div>
 
     <script>
-        // Carga el estado guardado del celular
         let state = JSON.parse(localStorage.getItem('flashcards_universal_state')) || {
             categories: ['Todos', 'Medicina', 'Alemán'],
             activeCategory: 'Todos',
             flashcards: []
         };
 
-        // Guarda o actualiza tu clave secreta de Google Gemini
         let apiKey = localStorage.getItem('gemini_flashcard_key') || '';
 
         function saveState() {
@@ -273,56 +270,69 @@
             if (key !== null) {
                 apiKey = key.trim();
                 localStorage.setItem('gemini_flashcard_key', apiKey);
-                alert("Clave guardada con éxito. ¡Ya puedes consultar cualquier palabra!");
+                alert("Clave guardada con éxito.");
             }
         }
 
-        // LLAMADA REAL A LA INTELIGENCIA ARTIFICIAL EN VIVO
+        // FUNCIÓN DE LLAMADA CORREGIDA PARA CONFIGURACIÓN DIRECTA WEB
         async function askGeminiAI(word, category) {
             if (!apiKey) {
-                alert("Por favor, haz clic primero en 'Configurar Clave API Gemini' abajo para activar las consultas infinitas.");
+                alert("Por favor, haz clic en 'Configurar Clave API Gemini' para ingresar tu clave.");
                 return null;
             }
 
-            // Aquí le ordenamos a la IA exactamente cómo estructurar la respuesta según tu categoría
             const promptTexto = `Eres un asistente de estudio experto. El usuario quiere aprender el término "${word}" dentro de la categoría "${category}".
 Genera una respuesta EXCLUSIVAMENTE usando viñetas planas (utiliza el carácter "•") siguiendo estrictamente estas reglas de contexto:
 
-Si la categoría es "Alemán" (o relacionada con idiomas):
-• Traducción: [Traducción exacta al idioma]
-• Artículo: [Der, Die o Das si aplica, en mayúsculas]
+Si la categoría es "Alemán":
+• Traducción: [Traducción al español]
+• Artículo: [Der, Die o Das en mayúsculas]
 • Plural: [Forma plural]
-• Frase útil: [Un ejemplo práctico corto en ese idioma y su traducción]
+• Frase útil: [Un ejemplo corto en alemán y traducción]
 
-Si la categoría es "Medicina" (o relacionada con ciencias):
-• Qué es: [Definición clínica/médica simplificada]
-• Detalles anatómicos/Cantidad: [Datos anatómicos numéricos relevantes, ubicación o conteo si aplica]
-• Función principal: [Para qué sirve en el organismo]
+Si la categoría es "Medicina":
+• Qué es: [Definición médica simplificada]
+• Detalles anatómicos/Cantidad: [Datos anatómicos o numéricos si aplica]
+• Función principal: [Función en el organismo]
 
 Para cualquier otra categoría:
-• Concepto central: [Explicación adaptada al tema de la lista]
-• Información útil: [Dato clave para memorizar de manera efectiva]
+• Concepto central: [Explicación adaptada al tema]
+• Información útil: [Dato clave para memorizar]
 
-Sé muy conciso, directo al grano y no agregues textos de introducción ni despedidas. Solo las viñetas directas.`;
+Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`;
+
+            // URL del endpoint estable para llamadas directas
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
 
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptTexto }] }]
+                        contents: [{
+                            role: "user",
+                            parts: [{ text: promptTexto }]
+                        }]
                     })
                 });
 
                 const data = await response.json();
+                
+                if (data.error) {
+                    alert(`Error de Google: ${data.error.message}`);
+                    return null;
+                }
+
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     return data.candidates[0].content.parts[0].text.trim();
                 } else {
-                    throw new Error("Respuesta de IA vacía");
+                    throw new Error("Estructura de respuesta inválida");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Error al conectar con la IA. Revisa que tu clave API sea correcta y tengas conexión a internet.");
+                alert("Error al conectar. Verifica que pegaste la clave completa sin espacios.");
                 return null;
             }
         }
@@ -349,7 +359,7 @@ Sé muy conciso, directo al grano y no agregues textos de introducción ni despe
         }
 
         function addCategory() {
-            const name = prompt("Nombre de la nueva lista de estudio (ej. Historia, Inglés, Leyes):");
+            const name = prompt("Nombre de la nueva lista:");
             if (name && !state.categories.includes(name)) {
                 state.categories.push(name);
                 saveState();
@@ -367,7 +377,7 @@ Sé muy conciso, directo al grano y no agregues textos de introducción ni despe
                 grid.innerHTML = `
                     <div class="empty-state">
                         <i data-lucide="sparkles" size="40"></i>
-                        <p style="margin-top:10px;">No hay tarjetas aquí.<br>Escribe cualquier palabra abajo para que la IA la procese.</p>
+                        <p style="margin-top:10px;">No hay tarjetas aquí.<br>Escribe cualquier palabra abajo.</p>
                     </div>
                 `;
                 lucide.createIcons();
@@ -432,7 +442,6 @@ Sé muy conciso, directo al grano y no agregues textos de introducción ni despe
             generateBtn.innerHTML = `<i data-lucide="loader" class="animate-spin" size="18"></i> Pensando en tiempo real...`;
             lucide.createIcons();
 
-            // Aquí se conecta con el servidor vivo de Google
             const aiDefinition = await askGeminiAI(word, category);
 
             if (aiDefinition) {

@@ -41,12 +41,18 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* CORRECCIÓN EXCLUSIVA PARA APP DE IOS: Congelar el fondo para evitar rebotes molestos */
-        body {
+        /* SOLUCIÓN AL SCROLL DE IOS: Usar altura dinámica real (100dvh) y permitir scroll general libre */
+        html, body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            height: 100vh;
-            overflow: hidden;
+            height: 100dvh;
+            width: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y; /* Bloquea zooms accidentales laterales pero permite scroll vertical fluido */
+        }
+
+        body {
             display: flex;
             flex-direction: column;
             padding-top: env(safe-area-inset-top); 
@@ -60,17 +66,20 @@
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 30;
         }
 
         header h1 { font-size: 22px; font-weight: 700; }
 
-        /* CORRECCIÓN CLAVE: Activar el scroll táctil e independiente dentro de la App instalada */
+        /* Contenedor de scroll con elástica nativa de Apple */
         main {
             flex: 1;
-            overflow-y: scroll;
-            -webkit-overflow-scrolling: touch; /* Suavidad y respuesta táctil estilo iPhone */
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             padding: 16px;
-            padding-bottom: 180px; /* Evita que la última tarjeta choque con el panel de la IA */
+            padding-bottom: 220px; /* Margen amplio para que las tarjetas suban por completo del panel */
         }
 
         .category-tabs {
@@ -82,6 +91,9 @@
             scrollbar-width: none;
             background: var(--bg-color);
             flex-shrink: 0;
+            position: sticky;
+            top: 0;
+            z-index: 25;
         }
         .category-tabs::-webkit-scrollbar { display: none; }
 
@@ -194,7 +206,7 @@
             flex-direction: column;
             gap: 10px;
             box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
-            z-index: 20;
+            z-index: 40;
             flex-shrink: 0;
         }
 

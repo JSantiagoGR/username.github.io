@@ -1,10 +1,10 @@
-# username.github.io
+
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Flashcard AI Studio Universal</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -41,15 +41,12 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* SOLUCIÓN AL SCROLL DE IOS: Usar altura dinámica real (100dvh) y permitir scroll general libre */
+        /* LIBERACIÓN DEL SCROLL: Código limpio sin bloqueos de eventos táctiles */
         html, body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            height: 100dvh;
+            min-height: 100vh;
             width: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y; /* Bloquea zooms accidentales laterales pero permite scroll vertical fluido */
         }
 
         body {
@@ -65,7 +62,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-shrink: 0;
             position: sticky;
             top: 0;
             z-index: 30;
@@ -73,13 +69,9 @@
 
         header h1 { font-size: 22px; font-weight: 700; }
 
-        /* Contenedor de scroll con elástica nativa de Apple */
         main {
-            flex: 1;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
             padding: 16px;
-            padding-bottom: 220px; /* Margen amplio para que las tarjetas suban por completo del panel */
+            padding-bottom: 240px; /* Espacio de sobra para que no tape el panel inferior */
         }
 
         .category-tabs {
@@ -90,9 +82,8 @@
             margin-bottom: 16px;
             scrollbar-width: none;
             background: var(--bg-color);
-            flex-shrink: 0;
             position: sticky;
-            top: 0;
+            top: 58px;
             z-index: 25;
         }
         .category-tabs::-webkit-scrollbar { display: none; }
@@ -121,8 +112,8 @@
             gap: 16px;
         }
 
+        /* SOLUCIÓN AL BLOQUEO DE IOS: Tarjetas planas sin transformaciones 3D complejas */
         .flashcard-wrapper {
-            perspective: 1000px;
             min-height: 180px;
             cursor: pointer;
         }
@@ -130,18 +121,6 @@
         .flashcard {
             width: 100%;
             height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .flashcard.flipped { transform: rotateY(180deg); }
-
-        .card-front, .card-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
             background: var(--card-bg);
             border-radius: 16px;
             padding: 20px;
@@ -149,10 +128,30 @@
             flex-direction: column;
             border: 1px solid var(--border);
             box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: relative;
         }
 
-        .card-back {
-            transform: rotateY(180deg);
+        /* Ocultamos por defecto la parte trasera */
+        .flashcard .card-back-content {
+            display: none;
+        }
+
+        /* Cuando se activa la clase 'flipped', ocultamos el frente y mostramos el dorso */
+        .flashcard.flipped {
+            background: #fafafa;
+        }
+        @media (prefers-color-scheme: dark) {
+            .flashcard.flipped { background: #1c2128; }
+        }
+
+        .flashcard.flipped .card-front-content {
+            display: none;
+        }
+
+        .flashcard.flipped .card-back-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .card-header-area {
@@ -174,15 +173,15 @@
         .card-title {
             font-size: 24px;
             font-weight: 700;
-            margin-bottom: auto;
             color: var(--text-main);
+            margin-top: 10px;
+            margin-bottom: 20px;
         }
 
         .card-body {
             font-size: 15px;
             line-height: 1.6;
             color: var(--text-main);
-            overflow-y: auto;
             white-space: pre-line;
         }
 
@@ -207,7 +206,6 @@
             gap: 10px;
             box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
             z-index: 40;
-            flex-shrink: 0;
         }
 
         .input-row {
@@ -417,9 +415,9 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas d
             }
 
             grid.innerHTML = filtered.map(card => `
-                <div class="flashcard-wrapper" onclick="flipCard(this)">
+                <div class="flashcard-wrapper" onclick="toggleFlip(this)">
                     <div class="flashcard">
-                        <div class="card-front">
+                        <div class="card-front-content">
                             <div class="card-header-area">
                                 <span class="card-tag">${card.category}</span>
                                 <button class="delete-btn" onclick="deleteCard(event, ${card.id})">
@@ -427,9 +425,10 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas d
                                 </button>
                             </div>
                             <h2 class="card-title">${card.word}</h2>
-                            <span style="font-size:11px; color:var(--text-muted); text-align:right; width:100%;">Tocar para ver información de la IA →</span>
+                            <span style="font-size:11px; color:var(--text-muted); text-align:right;">Tocar para ver información →</span>
                         </div>
-                        <div class="card-back">
+                        
+                        <div class="card-back-content">
                             <div class="card-header-area">
                                 <span class="card-tag" style="color:var(--text-muted)">Análisis de la IA</span>
                             </div>
@@ -442,7 +441,7 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas d
             lucide.createIcons();
         }
 
-        function flipCard(wrapper) {
+        function toggleFlip(wrapper) {
             const card = wrapper.querySelector('.flashcard');
             card.classList.toggle('flipped');
         }

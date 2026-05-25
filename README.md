@@ -4,7 +4,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Flashcard AI Studio Universal</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -41,11 +41,14 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* CORRECCIÓN: Permitir scroll natural en todo el dispositivo */
+        /* CORRECCIÓN EXCLUSIVA PARA APP DE IOS: Congelar el fondo para evitar rebotes molestos */
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
             padding-top: env(safe-area-inset-top); 
         }
 
@@ -56,17 +59,18 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            flex-shrink: 0;
         }
 
         header h1 { font-size: 22px; font-weight: 700; }
 
-        /* CORRECCIÓN: Ajuste de márgenes para que las tarjetas no se escondan detrás del panel inferior */
+        /* CORRECCIÓN CLAVE: Activar el scroll táctil e independiente dentro de la App instalada */
         main {
+            flex: 1;
+            overflow-y: scroll;
+            -webkit-overflow-scrolling: touch; /* Suavidad y respuesta táctil estilo iPhone */
             padding: 16px;
-            padding-bottom: 200px; 
+            padding-bottom: 180px; /* Evita que la última tarjeta choque con el panel de la IA */
         }
 
         .category-tabs {
@@ -76,10 +80,8 @@
             padding-bottom: 12px;
             margin-bottom: 16px;
             scrollbar-width: none;
-            position: sticky;
-            top: 60px;
-            z-index: 9;
             background: var(--bg-color);
+            flex-shrink: 0;
         }
         .category-tabs::-webkit-scrollbar { display: none; }
 
@@ -193,6 +195,7 @@
             gap: 10px;
             box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
             z-index: 20;
+            flex-shrink: 0;
         }
 
         .input-row {
@@ -306,7 +309,7 @@ Si la categoría es "Alemán":
 1. Primero detecta si "${word}" está escrito en español o en alemán.
 2. Si el término está en español: Tradúcelo al alemán.
 3. Si el término está en alemán: Tradúcelo al español.
-4. En AMBOS casos, debes extraer obligatoriamente los datos del término en alemán. Si el término no es un sustantivo (como un saludo o verbo), adáptalo coherentemente (por ejemplo, para saludos o verbos pon "Artículo: No aplica" o explica su uso).
+4. En AMBOS casos, debes extraer obligatoriamente los datos del término en alemán. Si el término no es un sustantivo (como un saludo o verbo), adáptalo coherentemente.
 Escribe la respuesta exactamente con esta estructura:
 • Traducción: [La palabra traducida al idioma opuesto]
 • Artículo: [DER, DIE o DAS en mayúsculas si es sustantivo, o "No aplica" si es verbo/saludo]

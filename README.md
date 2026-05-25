@@ -4,8 +4,13 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Flashcard AI Studio Universal</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Flashcards IA">
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         :root {
@@ -15,6 +20,18 @@
             --text-muted: #657180;
             --accent: #007aff; 
             --border: #e1e4e8;
+        }
+
+        /* Soporte automático para Modo Oscuro en iPhone */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #161b22;
+                --card-bg: #0d1117;
+                --text-main: #f0f6fc;
+                --text-muted: #8b949e;
+                --accent: #2f81f7;
+                --border: #30363d;
+            }
         }
 
         * {
@@ -32,6 +49,7 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            padding-top: env(safe-area-inset-top); 
         }
 
         header {
@@ -46,13 +64,13 @@
             z-index: 10;
         }
 
-        header h1 { font-size: 20px; font-weight: 700; }
+        header h1 { font-size: 22px; font-weight: 700; }
 
         main {
             flex: 1;
             overflow-y: auto;
             padding: 16px;
-            padding-bottom: 140px; 
+            padding-bottom: 160px; 
         }
 
         .category-tabs {
@@ -74,6 +92,7 @@
             border: 1px solid var(--border);
             white-space: nowrap;
             cursor: pointer;
+            color: var(--text-main);
         }
 
         .tab.active {
@@ -115,12 +134,11 @@
             display: flex;
             flex-direction: column;
             border: 1px solid var(--border);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         }
 
         .card-back {
             transform: rotateY(180deg);
-            background: #fafafa;
         }
 
         .card-header-area {
@@ -147,8 +165,8 @@
         }
 
         .card-body {
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 15px;
+            line-height: 1.6;
             color: var(--text-main);
             overflow-y: auto;
             white-space: pre-line;
@@ -169,11 +187,11 @@
             right: 0;
             background: var(--card-bg);
             border-top: 1px solid var(--border);
-            padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); 
+            padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); 
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+            gap: 10px;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
         }
 
         .input-row {
@@ -184,9 +202,9 @@
         input, select {
             background: var(--bg-color);
             border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 15px;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
             outline: none;
             color: var(--text-main);
         }
@@ -198,10 +216,10 @@
             background: var(--accent);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 14px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 15px;
+            font-size: 16px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -233,7 +251,7 @@
 
     <header>
         <h1>Mis Flashcards</h1>
-        <button onclick="addCategory()" style="background:none; border:none; color:var(--accent); font-weight:600; font-size:15px;">+ Nueva Lista</button>
+        <button onclick="addCategory()" style="background:none; border:none; color:var(--accent); font-weight:600; font-size:16px;">+ Nueva Lista</button>
     </header>
 
     <main>
@@ -266,7 +284,7 @@
         }
 
         function setupApiKey() {
-            const key = prompt("Pega aquí tu API Key de Google Gemini (Gratuita):", apiKey);
+            const key = prompt("Pega aquí tu API Key de Google Gemini:", apiKey);
             if (key !== null) {
                 apiKey = key.trim();
                 localStorage.setItem('gemini_flashcard_key', apiKey);
@@ -274,24 +292,29 @@
             }
         }
 
-        // ENDPOINT ACTUALIZADO A LA API GENERATIVA MODERNA
         async function askGeminiAI(word, category) {
             if (!apiKey) {
-                alert("Por favor, haz clic en 'Configurar Clave API Gemini' para ingresar tu clave.");
+                alert("Por favor, configura tu API Key primero.");
                 return null;
             }
 
-            const promptTexto = `Eres un asistente de estudio experto. El usuario quiere aprender el término "${word}" dentro de la categoría "${category}".
+            // PROMPT ADAPTATIVO MEJORADO (Detecta automáticamente el idioma de entrada)
+            const promptTexto = `Eres un asistente de estudio bilingüe y experto en pedagogía. El usuario quiere aprender el término "${word}" dentro de la categoría "${category}".
 Genera una respuesta EXCLUSIVAMENTE usando viñetas planas (utiliza el carácter "•") siguiendo estrictamente estas reglas de contexto:
 
 Si la categoría es "Alemán":
-• Traducción: [Traducción al español]
-• Artículo: [Der, Die o Das en mayúsculas]
-• Plural: [Forma plural]
-• Frase útil: [Un ejemplo corto en alemán y traducción]
+1. Primero detecta si "${word}" está escrito en español o en alemán.
+2. Si el término está en español: Tradúcelo al alemán.
+3. Si el término está en alemán: Tradúcelo al español.
+4. En AMBOS casos, debes extraer obligatoriamente los datos del término en alemán. Si el término no es un sustantivo (como un saludo o verbo), adáptalo coherentemente (por ejemplo, para saludos o verbos pon "Artículo: No aplica" o explica su uso).
+Escribe la respuesta exactamente con esta estructura:
+• Traducción: [La palabra traducida al idioma opuesto]
+• Artículo: [DER, DIE o DAS en mayúsculas si es sustantivo, o "No aplica" si es verbo/saludo]
+• Plural: [La forma plural en alemán si es sustantivo, o "No aplica"]
+• Frase útil: [Una frase corta de ejemplo usando la palabra en alemán junto con su traducción al español entre paréntesis]
 
 Si la categoría es "Medicina":
-• Qué es: [Definición médica simplificada]
+• Qué es: [Definición médica simplificada en español]
 • Detalles anatómicos/Cantidad: [Datos anatómicos o numéricos si aplica]
 • Función principal: [Función en el organismo]
 
@@ -299,21 +322,16 @@ Para cualquier otra categoría:
 • Concepto central: [Explicación adaptada al tema]
 • Información útil: [Dato clave para memorizar]
 
-Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`;
+Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas directas.`;
 
-            // Endpoint de producción con la generación de modelos actual
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: promptTexto }]
-                        }]
+                        contents: [{ parts: [{ text: promptTexto }] }]
                     })
                 });
 
@@ -327,11 +345,11 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`
                 if (data.candidates && data.candidates[0].content.parts[0].text) {
                     return data.candidates[0].content.parts[0].text.trim();
                 } else {
-                    throw new Error("Estructura de respuesta inválida");
+                    throw new Error("Respuesta inválida");
                 }
             } catch (error) {
                 console.error(error);
-                alert("Error al conectar. Verifica que la clave API esté bien pegada.");
+                alert("Error al conectar. Verifica tu clave API.");
                 return null;
             }
         }

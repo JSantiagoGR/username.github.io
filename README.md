@@ -1,4 +1,5 @@
 # username.github.io
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -273,7 +274,7 @@
             }
         }
 
-        // RUTA DE API Y CONFIGURACIÓN BETA CORREGIDA
+        // ENDPOINT ACTUALIZADO A LA API GENERATIVA MODERNA
         async function askGeminiAI(word, category) {
             if (!apiKey) {
                 alert("Por favor, haz clic en 'Configurar Clave API Gemini' para ingresar tu clave.");
@@ -300,8 +301,8 @@ Para cualquier otra categoría:
 
 Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`;
 
-            // Usando la ruta v1beta/models/gemini-pro para evitar los problemas de rutas estrictas en v1
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+            // Endpoint de producción con la generación de modelos actual
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(url, {
@@ -311,7 +312,6 @@ Sé conciso, directo y no agregues textos extras ni saludos. Solo las viñetas.`
                     },
                     body: JSON.stringify({
                         contents: [{
-                            role: "user",
                             parts: [{ text: promptTexto }]
                         }]
                     })

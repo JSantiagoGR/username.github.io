@@ -4,7 +4,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Flashcard AI Studio Universal</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,7 +22,6 @@
             --border: #e1e4e8;
         }
 
-        /* Soporte automático para Modo Oscuro en iPhone */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #161b22;
@@ -42,13 +41,11 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* CORRECCIÓN: Permitir scroll natural en todo el dispositivo */
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
             padding-top: env(safe-area-inset-top); 
         }
 
@@ -66,11 +63,10 @@
 
         header h1 { font-size: 22px; font-weight: 700; }
 
+        /* CORRECCIÓN: Ajuste de márgenes para que las tarjetas no se escondan detrás del panel inferior */
         main {
-            flex: 1;
-            overflow-y: auto;
             padding: 16px;
-            padding-bottom: 160px; 
+            padding-bottom: 200px; 
         }
 
         .category-tabs {
@@ -80,6 +76,10 @@
             padding-bottom: 12px;
             margin-bottom: 16px;
             scrollbar-width: none;
+            position: sticky;
+            top: 60px;
+            z-index: 9;
+            background: var(--bg-color);
         }
         .category-tabs::-webkit-scrollbar { display: none; }
 
@@ -192,6 +192,7 @@
             flex-direction: column;
             gap: 10px;
             box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+            z-index: 20;
         }
 
         .input-row {
@@ -298,7 +299,6 @@
                 return null;
             }
 
-            // PROMPT ADAPTATIVO MEJORADO (Detecta automáticamente el idioma de entrada)
             const promptTexto = `Eres un asistente de estudio bilingüe y experto en pedagogía. El usuario quiere aprender el término "${word}" dentro de la categoría "${category}".
 Genera una respuesta EXCLUSIVAMENTE usando viñetas planas (utiliza el carácter "•") siguiendo estrictamente estas reglas de contexto:
 
